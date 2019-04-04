@@ -28,7 +28,7 @@ class CycloneSpider(scrapy.Spider):
         # extract cyclone information
         qp = self.__get_query_parameters(response)
         cyclone = CycloneItem(name=qp.get('storm_identifier')[0])
-        yield cyclone
+        yield {'item': cyclone}
 
         # extract information needed by forecast
         fdefaults = namedtuple('ForecastDefaults',
@@ -46,13 +46,13 @@ class CycloneSpider(scrapy.Spider):
                 forecast['synoptic_time'] = int(self.pattern.search(
                     response.xpath('//h4[contains(text(), "Time of Latest Forecast")]/text()').get()).groups()[0])
                 forecast['type'] = ForecastModel.TYPE_CHOICES[0][1]
-                yield forecast
+                yield {'item': forecast}
 
                 keys = self.__get_table_headers(table)
                 for track in table.xpath('.//tr')[1:]:
                     # extract track information
                     values = track.xpath('.//td/text()').getall()
-                    yield {'track': ForecastTrackItem(**{k: v for k, v in zip(keys, values)}), 'forecast': forecast}
+                    yield {'item': ForecastTrackItem(**{k: v for k, v in zip(keys, values)}), 'forecast': forecast}
 
             elif table.xpath('.//td[contains(text(), "Synoptic Time")]/text()').get():
                 keys = self.__get_table_headers(table)
@@ -64,10 +64,11 @@ class CycloneSpider(scrapy.Spider):
                     forecast = ForecastItem(**fdefaults._asdict())
                     forecast['synoptic_time'] = int(item['synoptic_time'])
                     forecast['type'] = ForecastModel.TYPE_CHOICES[1][1]
-                    yield forecast
+                    yield {'item': forecast}
 
                     del item['synoptic_time']
-                    yield {'track': ForecastTrackItem(**item), 'forecast': forecast}
+                    item['forecast_hour'] = 0
+                    yield {'item': ForecastTrackItem(**item), 'forecast': forecast}
 
     def parse(self, response):
         for href in response.css('.basin_storms').xpath('.//ul//li//a/@href').getall():

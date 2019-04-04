@@ -15,26 +15,51 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def get_model_dict(model):
+    return dict((column.name, getattr(model, column.name))
+                for column in model.__table__.columns)
+
+
+def create_or_update(session, data, imodel):
+    s = get_model_dict(imodel)
+    del s['id']
+    query = session.query(imodel.__class__).filter_by(**s)
+    item = query.first()
+    if item:
+        logger.log(logging.INFO, 'Item not updated')
+    else:
+        session.add(imodel)
+
+
 def add_default(session, item, model):
-    data = dict(item)
-    session.add(model(**data))
+    data = dict(item.get('item'))
+    imodel = model(**data)
+    create_or_update(session, data, imodel)
+    return imodel
 
 
 def add_forecast_model(session, item, model):
-    data = dict(item)
+    data = dict(item.get('item'))
     imodel = model()
     imodel.research_geographical_area = session.query(ResearchGeographicalArea)\
         .filter_by(short_name=data.get('research_geographical_area')).one().id
     imodel.cyclone = session.query(CycloneModel).filter_by(name=data.get('cyclone')).one().id
     imodel.type = data.get('type')
     imodel.synoptic_time = data.get('synoptic_time')
-    session.add(imodel)
+    create_or_update(session, data, imodel)
+
+
+def add_forecast_track_model(session, item, model):
+    data = item.get('item')
+    imodel = model(**data)
+    imodel.forecast = session.query(ForecastModel).join(CycloneModel, ResearchGeographicalArea).filter_by(**item.get('forecast')).one().id
+    create_or_update(session, data, imodel)
 
 
 MAP = {
     CycloneItem.__name__: {'model': CycloneModel, 'add': add_default},
     ForecastItem.__name__: {'model': ForecastModel, 'add': add_forecast_model},
-    ForecastTrackItem.__name__: {'model': TrackModel, 'add': add_default}
+    ForecastTrackItem.__name__: {'model': TrackModel, 'add': add_forecast_track_model}
 }
 
 
@@ -52,10 +77,13 @@ class CyclonePipeline:
         self.session.close()
 
     def process_item(self, item, spider):
-        scenario = MAP.get(item.__class__.__name__)
-
+        scenario = MAP.get(item.get('item').__class__.__name__)
+        imodel = None
         try:
-            scenario['add'](self.session, item, scenario['model'])
+            imodel = scenario['add'](self.session, item, scenario['model'])
             self.session.commit()
         except (IntegrityError, InvalidRequestError,) as err:
             logger.log(logging.WARN, err)
+            self.session.rollback()
+        # else:
+        #     return imodel
