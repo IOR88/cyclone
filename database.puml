@@ -1,0 +1,50 @@
+@startuml
+
+'http://rammb.cira.colostate.edu/products/tc_realtime/index.asp
+'measurement types
+class Forecast {
+    It tell for how long it is valid
+    and how long it takes to make forecast
+    ..
+
+}
+
+class ForecastCenter {
+    describes the forecast center
+    ..
+
+}
+class Cyclone {
+    id: integer: surrogate key
+    name: string: business key
+}
+
+class Forecast {
+    'each forecast track history record is given in 6 hours interval
+    'than the forecast itself contains information about cyclone changes in
+    'intervals as follow in bellow example:
+    Forecast Track
+    Time of Latest Forecast: 201904020600
+    Forecast Hour 	Latitude 	Longitude 	Intensity
+    0 	0 	0 	0
+    12 	0 	0 	0
+    24 	0 	0 	0
+    36 	0 	0 	0
+    48 	0 	0 	0
+    72 	0 	0 	0
+    96 	0 	0 	0
+    120 	0 	0 	0
+    }
+
+class Track {
+    date_time: datetime(Synoptic Time)
+    latitude: float
+    longitude: float
+}
+
+'It looks that each forecast track has this structure
+'Forecast Hour 	Latitude 	Longitude 	Intensity
+
+'ForecastCenter <--{ CycloneData
+
+@enduml
