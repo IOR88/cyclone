@@ -10,6 +10,10 @@ Base = declarative_base()
 
 
 class ResearchGeographicalArea(Base):
+    """
+    We have choose a research geographical area to represent oceans as it seems more accurate because
+    ocean may be divided into sub areas.
+    """
     __tablename__ = 'research_geographical_area'
     id = Column('id', Integer, primary_key=True, autoincrement=True)
     name = Column('name', String(50), unique=True, nullable=False)
@@ -30,13 +34,19 @@ class CycloneModel(Base):
 
 
 class ForecastModel(Base):
+    """
+    Uniqueness of forecast is guaranteed by ocean alias research geographical area, cyclone, synoptic time and type.
+    Based on http://rammb.cira.colostate.edu/products/tc_realtime/about.asp information forecast may be of 2 types
+    historical and base.
+    """
+
     TYPE_CHOICES = (
         ('BASIC', 0),
         ('HISTORICAL', 1)
     )
     __tablename__ = 'forecast'
     __table_args__ = (
-        UniqueConstraint('research_geographical_area', 'cyclone', 'synoptic_time', name='_forecast_cyclone_t'),
+        UniqueConstraint('research_geographical_area', 'cyclone', 'synoptic_time', 'type', name='_forecast_unique'),
     )
 
     id = Column('id', Integer, primary_key=True, autoincrement=True)
@@ -48,9 +58,14 @@ class ForecastModel(Base):
 
 
 class TrackModel(Base):
+    """
+    By default all tracks related to forecast of type 1(HISTORICAL) will have forecast hour 0. This is because historical
+    tracks are produced from forecast center warnings and are most accurate when the warning is issued.
+    """
+
     __tablename__ = 'track'
     __table_args__ = (
-        UniqueConstraint('forecast', 'hour', name='_forecast_h'),
+        UniqueConstraint('forecast', 'hour', name='_track_unique'),
     )
 
     id = Column('id', Integer, primary_key=True, autoincrement=True)

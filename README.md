@@ -1,8 +1,27 @@
-# Modelling
-There are some issues which I think occurred because I still need more information from cyclones tracking area. For example forecast centers "National Hurricane Center" and "Central Pacific Hurricane Center" both provides data for "North Pacific" but data available in each year section, group cyclones by areas "Eastern Pacific", "Central Pacific", "Western Pacific". So it is difficult to say how connect Forecast Centers with research areas as they are not matching. As well forecast tracks does not provide information about which Forecast Center produced forecast. We mention this because we wanted to relate forecast track with specific forecast center and research area.
+# Docker
 
-For track initially we wanted to store its data in JSON structure as forecasting technique is different, the interval and prediction factors are different which depends on research ocean area. But in order to interpret this correctly we would have to store interval and prediction information for each research area or create some entity like ResearchMethod, this would bring a lot of good because we could add different forecasting tracks(made with different intervals, prediction techniques) and compare them latter on, checking which one was more predictable. But I have omitted this because I lack information in this area. Maybe interval and prediction values are bound to some geo areas because some are less predictable so forecast cannot be longer than 48 hours as in Southern Hemisphere case.
 
-But after look on data it seems that Forecast Hour scale is always the same no matter what forecast interval or prediction are used. So for one forecast track related with the cyclone, there may exist only 8 records, in order to retrieve them we need just to group track data by forecast time and cyclone.
+# Deployment
+provide settings for database
+```python
+DATABASE_HOST = 'localhost'
+DATABASE_PORT = '5432'
+DATABASE_NAME = 'cyclone'
+DATABASE_USER = 'admin'
+DATABASE_PASSWORD = '1234'
 
-Another thing is that I don't know how cyclones data is shared between many research areas if cyclone will move to another location, the data may be shared on page to crawl but I am not sure how to handle this from cyclone tracking business perspective.
+```
+create database schema (run model.py as main file)
+```bash
+$(virtualenv) python ../models.py
+```
+
+run scrapy (will save extracted data to postgresql database)
+```bash
+$(virtualenv) scrapy crawl cyclone_spider
+```
+
+# Modelling(thoughts)
+* For cyclone entity we have just provided a name flag, which is extracted from http://rammb.cira.colostate.edu, we are not totally sure about name **re(\w{2})(\d{2})(\d{4})**, it seems that first group corresponds to geographical area, the last to year, the middle one could be the day of a year or maybe unique cyclone identifier. **We mention this because we haven't implemented cyclone movement element, we are not sure if scenario like this is contained in tracking data.** 
+
+* From http://rammb.cira.colostate.edu we know that 3 forecast centers bring information for cyclones, and from there we know that some forecast centers share the same oceans area but still tracking data is not associated with any forecast center, at least not on the rammb page. **Forecast entity has a relationship to forecast center but it is NULL true for a moment**.
