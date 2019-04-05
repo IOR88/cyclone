@@ -1,5 +1,5 @@
 FROM ubuntu:bionic
-#RUN apt-get update
+RUN apt-get update
 
 #################
 # POSGRESQL
@@ -18,45 +18,27 @@ RUN apt-get install -y software-properties-common postgresql-10 postgresql-clien
 # Run the rest of the commands as the ``postgres`` user created by the ``postgres`` package when it was ``apt-get installed``
 USER postgres
 
+# create user admin with password 1234 and cyclone database
 RUN /etc/init.d/postgresql start &&\
     psql --command "CREATE USER admin WITH LOGIN PASSWORD '1234';" &&\
     createdb -O admin cyclone
-
-## Adjust PostgreSQL configuration so that remote connections to the
-## database are possible.
-#RUN echo "host all  all    0.0.0.0/0  md5" >> /etc/postgresql/10/main/pg_hba.conf
-#
-#RUN echo "listen_addresses='*'" >> /etc/postgresql/10/main/postgresql.conf
-#
-## Expose the PostgreSQL port
-#EXPOSE 5432
-#
-# Add VOLUMEs to allow backup of config, logs and databases
-VOLUME  ["/etc/postgresql", "/var/log/postgresql", "/var/lib/postgresql"]
 
 
 ######################
 # PYTHON AND SCRAPY
 ######################
+USER root
 RUN apt-get -y install python3-pip python3-dev build-essential
-RUN pip3 install -y virtualenv virtualenvwrapper
-RUN pip3 install -y --upgrade pip
+RUN pip3 install virtualenv
+RUN pip3 install --upgrade pip
 
 RUN mkdir /home/cyclone
 RUN mkdir /home/cyclone/src
-RUN mkdir /home/cyclone/.virtualenvs
+RUN mkdir /home/cyclone/virtualenv
 COPY . /home/cyclone/src
-RUN export WORKON_HOME=/home/cyclone/virtualenvs
-RUN . /usr/local/bin/virtualenvwrapper.sh
-RUN mkvirtualenv -p $(which python3.6) cyclone
+RUN virtualenv -p $(which python3.6) /home/cyclone/virtualenv
 
-RUN activate cyclone
-RUN cd /home/cyclone/src
-RUN python setup.py install -e .
+RUN /bin/bash -c ". /home/cyclone/virtualenv/bin/activate && cd /home/cyclone/src && pip install -e ."
+RUN /bin/bash -c ". /home/cyclone/virtualenv/bin/activate && service postgresql start && python /home/cyclone/src/src/cyclone/models.py && cd /home/cyclone/src/src/cyclone && python /home/cyclone/virtualenv/bin/scrapy crawl cyclone_spider && PGPASSWORD=1234 psql -U admin -d cyclone -h 127.0.0.1 -c 'SELECT track.hour, track.latitude, track.longitude, track.intensity, forecast.synoptic_time, cyclone.name AS cyclone_name, research_geographical_area.name as basin_name, forecast.type AS track_type FROM track JOIN forecast ON track.forecast=forecast.id JOIN cyclone ON forecast.cyclone=cyclone.id JOIN research_geographical_area ON forecast.research_geographical_area=research_geographical_area.id;' > /home/cyclone/output.txt"
 
-COPY crontab /etc/cron.d/cyclone-crawl-task
-RUN chmod 0644 /etc/cron.d/cyclone-crawl-task
-
-# Set the default command to run when starting the container
-CMD ["/usr/lib/postgresql/10/bin/postgres", "-D", "/var/lib/postgresql/10/main", "-c", "config_file=/etc/postgresql/10/main/postgresql.conf"]
-RUN service cron start
+RUN cat /home/cyclone/output.txt

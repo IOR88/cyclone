@@ -1,2 +1,0 @@
-1 * * * * cd /home/cyclone/src/src && /home/cyclone/.virtualenvs/cyclone/bin/python /home/cyclone/.virtualenvs/cyclone/bin/scrapy crawl cyclone_spider
-# Mandatory blank line

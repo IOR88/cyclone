@@ -1,0 +1,14 @@
+ hour | latitude | longitude | intensity | synoptic_time | cyclone_name |     basin_name      | track_type
+------+----------+-----------+-----------+---------------+--------------+---------------------+------------
+    0 |    -11.4 |     128.4 |        35 |  201904050000 | SH232019     | Southern Hemisphere |          0
+   12 |    -11.9 |     126.7 |        45 |  201904050000 | SH232019     | Southern Hemisphere |          0
+   24 |    -12.4 |     124.8 |        50 |  201904050000 | SH232019     | Southern Hemisphere |          0
+   36 |    -12.8 |     122.9 |        55 |  201904050000 | SH232019     | Southern Hemisphere |          0
+   48 |    -13.4 |     120.7 |        60 |  201904050000 | SH232019     | Southern Hemisphere |          0
+   72 |    -14.9 |     117.2 |        65 |  201904050000 | SH232019     | Southern Hemisphere |          0
+   96 |    -16.9 |     115.4 |        70 |  201904050000 | SH232019     | Southern Hemisphere |          0
+  120 |    -18.8 |       114 |        50 |  201904050000 | SH232019     | Southern Hemisphere |          0
+    0 |    -11.9 |     127.4 |        35 |  201904050600 | SH232019     | Southern Hemisphere |          1
+    0 |    -11.4 |     128.4 |        35 |  201904050000 | SH232019     | Southern Hemisphere |          1
+(10 rows)
+
