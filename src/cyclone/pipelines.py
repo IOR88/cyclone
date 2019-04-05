@@ -20,6 +20,7 @@ def insert_data(session, model, data):
         obj = model(**data)
         try:
             session.add(obj)
+            session.commit()
         except (Exception,) as err:
             logger.log(logging.WARN, 'Session rollback reason:{err}'.format(err=err))
             session.rollback()
@@ -42,15 +43,14 @@ class CyclonePipeline:
 
     def process_item(self, item, spider):
         cyclone = insert_data(self.session, CycloneModel, {'name': item.get('cyclone__name')})
-        self.session.commit()
         r_geo_area = self.session.query(ResearchGeographicalArea).filter_by(short_name=item.get('research_geographical_area__short_name')).one()
 
         for items in item.get('items'):
             forecast = insert_data(self.session, ForecastModel,
                                    {**items.get('forecast'), 'cyclone': cyclone.id, 'research_geographical_area': r_geo_area.id})
-            self.session.commit()
             for track in items.get('tracks'):
+                # we intentionally insert tracks one by one in order to not loose the whole set because of one item
+                # insertion error
                 insert_data(self.session, TrackModel,
                             {**track, 'forecast': forecast.id})
-                self.session.commit()
         return item
