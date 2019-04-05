@@ -1,0 +1,15 @@
+version: '3'
+services:
+  database:
+    build: ./test_database
+    container_name: cyclone_database_test
+    ports:
+     - "5432:5432"
+    hostname: "0.0.0.0"
+  tests:
+    build:
+      context: ../
+      dockerfile: ./tests/Dockerfile
+    container_name: cyclone_tests
+    depends_on:
+       - database
